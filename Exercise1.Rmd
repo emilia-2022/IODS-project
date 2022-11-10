@@ -147,7 +147,7 @@ my_datetime <- "2020-12-01 12:00"
 my_datetime
 
 # error that is explained in the book... (you may put '#' in front of it)
-my_datetime - current_datetime
+#my_datetime - current_datetime
 
 current_datetime %>% class()
 my_datetime %>% class()
@@ -168,7 +168,7 @@ my_datesdiff %>% class()
 ymd_hm("2021-01-02 12:00") + my_datesdiff
 
 # another error challenge here... (again you may put '#' in front of that afterwards)
-560/my_datesdiff
+#560/my_datesdiff
 560/as.numeric(my_datesdiff)
 ```
 
@@ -278,7 +278,7 @@ gbd_short %>%
 ```{r}
 # do you see what is wrong here? (you may fix it or hide it with '#' afterwards)
 gbd_short %>% 
- filter(year = 1995)
+ filter(year == 1995) # needs to be double equals 
 
 gbd_short %>% 
   filter(year == 1995 | year == 2017)
@@ -411,8 +411,8 @@ mydata$`Nasty column name`
 
 # or
 
-mydata %>% 
- select(`Nasty column name`)
+#mydata %>% 
+ #select(`Nasty column name`)
 ```
 
 2.8 continued...
@@ -1712,23 +1712,90 @@ You may try yourself, and then check the solutions (link below)!
 
 ```{r}
 
+europe <- gapdata %>%
+  filter(continent %in% c("Europe"))
+
+p1 <- europe %>%
+  ggplot(aes(x = lifeExp))+
+  geom_histogram(bins=15)
+
+p2 <- europe %>%
+  ggplot(aes(sample = lifeExp))+ 
+  geom_qq()+ 
+  geom_qq_line(colour = "blue")
+p3 <- europe %>%
+  ggplot(aes(x = year, y = lifeExp))+ 
+  geom_boxplot(aes(fill = factor(year)))+ 
+  geom_jitter(alpha = 0.4)+ 
+  theme(legend.position = "none")
+library(patchwork)
+p1 / p2 | p3 # puts two plots above each other and one on the side 
+p1 / p2 / p3 # puts all plots on top of each other 
+  
 ```
 
 ### 6.12.2 Exercise
 
 ```{r}
+# filter data 
+europe_2years <- europe %>%
+  filter(year %in% c(1962, 1977))
+view(europe)
+view(europe_2years)
 
+p4 <- europe_2years %>% 
+  ggplot(aes(x = lifeExp))+
+  geom_histogram(bins = 15)+
+  facet_wrap(~year)
+
+p5 <- europe_2years %>%   
+  ggplot(aes(sample = lifeExp)) +              
+  geom_qq() + 
+  geom_qq_line(colour = "blue") + 
+  facet_wrap(~year)                        
+
+p6 <- europe_2years %>%         
+  ggplot(aes(x = factor(year), y = lifeExp)) + 
+  geom_boxplot(aes(fill = factor(year))) +      
+  geom_jitter(alpha = 0.4) +                    
+  theme(legend.position = "none")  
+
+library(patchwork)
+p4 / p5 | p6
+
+europe_2years %>%
+  t.test(lifeExp ~ year, data = .)
 ```
 
 ### 6.12.3 Exercise
 
 ```{r}
+gapdata %>% 
+  filter(year == 2007) %>% 
+  group_by(continent) %>% 
+  do(
+    t.test(.$lifeExp, mu = 70) %>% 
+      tidy()
+  )
 
 ```
 
 ### 6.12.4 Exercise
 
 ```{r}
+gapdata %>% 
+  filter(year >= 1990) %>% 
+  ggplot(aes(x = factor(year), y = pop)) + 
+  geom_boxplot() + 
+  facet_wrap(~continent)
+
+gapdata %>% 
+  filter(year >= 1990) %>% 
+  group_by(continent) %>% 
+  do(
+    kruskal.test(pop ~ year, data = .) %>%
+      tidy()
+  )
 
 ```
 
@@ -2036,13 +2103,27 @@ meldata %>%
 
 ### 8.14.1 Exercise
 
+*Using finalfit, create a summary table with “status.factor” as the dependent variable and the following as explanatory variables: sex.factor, ulcer.factor, age.factor, thickness.
+
+Change the continuous variable summary statistic to median and interquartile range instead of mean and sd.* 
+
 ```{r}
+
+meldata %>% 
+  summary_factorlist(dependent = "status.factor", 
+                     explanatory = 
+                       c("ulcer.factor", "age.factor", 
+                         "sex.factor", "thickness"), 
+                     cont = "median" # gives median and IQR range
+  )
 
 ```
 
 ### 8.14.2 Exercise
-
+*By changing one and only one line in the following block create firstly a new table showing the breakdown of status.factor by age and secondly the breakdown of status.factor by sex* 
 ```{r}
+# I cannot do this one, I do not understand the code 
+
 meldata %>%
   count(ulcer.factor, status.factor) %>%
   group_by(status.factor) %>%
