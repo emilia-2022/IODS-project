@@ -1,8 +1,9 @@
 # author: Emilia Carson 
-# date: November 10 2022 
+# date: November 14 2022 
 
-# One sentence file description at the top of the code 
-# Reference to the data file 
+# File to read in, clean and selected variables of interest to put into new data set
+# Data file related to student learning and attitudes 
+# Available at: http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt"
 
 # Data Wrangling 
 
