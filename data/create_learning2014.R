@@ -10,7 +10,7 @@
 library(tidyverse)
 library(dplyr)
 
-# Task 1 
+# TASK 1 
 
 # read in data 
 lrn14 <- read.table("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt", 
@@ -23,7 +23,7 @@ str(lrn14) # explore structure of data
 dim(lrn14) # explore dimensions of data 
 # dataset has 183 rows and 60 columns
 
-# Task 2 
+# TASK 2 
 
 # divide each number in a vector to get a mean 
 c(1,2,3,4,5) / 2
@@ -49,7 +49,7 @@ lrn14$surf <- rowMeans(lrn14[, surface_questions])    # create column surf by av
 # strategic learning column
 strategic_questions <- c("ST01","ST09","ST17","ST25", # related questions 
                          "ST04","ST12","ST20","ST28")
-lrn14$strat<- rowMeans(lrn14[, strategic_questions])   # create column strat by averaging
+lrn14$strat<- rowMeans(lrn14[, strategic_questions])  # create column strat by averaging
 
 # choose columns to keep
 keep_columns <- c("gender",
@@ -69,7 +69,7 @@ names(learning2014) <- tolower(names(learning2014))
 # exclude observations where exam points are zero 
 learning2014 <- filter(learning2014, points > 0)
 
-# Task 3
+# TASK 3
 
 getwd() # view current working directory 
 setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\Open Data Science\\IODS-project_2022\\data")
@@ -78,6 +78,7 @@ setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\
 write.csv(learning2014, "learning_2014.csv")
 
 # read created dataset 
-# !!!! NEED TO USE STR AND HEAD BUT I DONT KNOW HOW !!! 
 learning2014_test <- read.csv("learning_2014.csv")
-view(learning2014_test)
+# check data structure and ensure correct 
+str(learning2014_test)
+head(learning2014_test)
