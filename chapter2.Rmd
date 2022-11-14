@@ -12,22 +12,6 @@ I understand them!
 date()
 ```
 
----
-title: "Assignment Two - Linear Regression"
-author: "Emilia Carson"
-date: "2022-11-14"
-output: 
-  html_document:
-    theme: flatly
-    highlight: haddock
-    toc: true
-    toc_depth: 2
-    number_section: false
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
