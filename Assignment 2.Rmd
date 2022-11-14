@@ -1,0 +1,225 @@
+---
+title: "Assignment Two - Linear Regression"
+author: "Emilia Carson"
+date: "2022-11-14"
+output: 
+  html_document:
+    theme: flatly
+    highlight: haddock
+    toc: true
+    toc_depth: 2
+    number_section: false
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 2: Linear Regression
+
+## Reading in the Data
+
+### Relevant Libraries and Packages
+
+```{r, warning=FALSE, message =FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2) 
+library(GGally)            
+library(purrr)
+```
+
+#### Step 1: Reading in the data
+
+```{r, warning=FALSE}
+# set working directory to access data
+setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\Open Data Science\\IODS-project_2022\\data")
+
+# read data from previously wrangled file 
+students_learning2014 <- read.csv("learning_2014.csv", sep = ",", header = TRUE)
+```
+
+```{r}
+dim(students_learning2014)
+str(students_learning2014)
+```
+
+*Explanations*
+
+This data set consists of information on 7 variables (X is merely an ID
+variable) collected on 166 students. Data was collected from 2014-2015
+and the variables selected for this dataset focus on various ways of
+learning employed by students, their attitude towards statistics, as
+well as background information.
+
+Below you can find a description of each variable present in the
+dataset:
+
+| Variable Name | Type             | Descriptor                                       |
+|----------------|----------------|----------------------------------------|
+| X             | Integer          | order of the variables (1-166)                   |
+| Gender        | Character        | student's gender, either M or F                  |
+| Age           | Integer          | student's age                                    |
+| Attitude      | Numeric (double) | average of student's attitude towards statistics |
+| Deep          | Numeric (double) | student's use of deep learning                   |
+| Strat         | Numeric (double) | student's use of strategic learning              |
+| Surf          | Numeric (double) | student's use of surface learning                |
+| Points        | Integer          | student's exam score                             |
+
+### Step 2: Preliminary Exploration
+
+#### 2.1 Graphical Overview
+
+```{r, message = FALSE}
+# Graphical Overview 
+ggpairs(students_learning2014[-1],                   # data, excluding X
+        mapping = aes(col = gender, alpha = 0.3), 
+        lower = list(combo = wrap("facethist", bins = 20)))
+
+```
+
+#### 2.2 Summaries
+
+```{r}
+students_learning2014[-1]  %>%
+  split(.$gender) %>%
+  map(summary) #summary(students_learning2014)
+```
+
+*Interpretations*
+
+From the graphical representation we can see their frequency,
+distributions, scatter plot, and correlations for each variable. Data
+from female students is shaded in pink and data from male students is
+shaded in light blue. Each variable will be interpreted in more detail
+below:
+
+**Gender**
+
+Frequency data reveals that the majority of respondents are female, with
+110 respondents being female and 56 being male. There seems to be little
+correlation between gender and the other variables. Little is revealed
+from the scatter plots.
+
+**Age**
+
+Age is a variable which shows a highly skewed distribution with the
+majority of respondents being of a younger age. This is confirmed in the
+summary with the mean age being around 25 years old. Younger age seems
+to be characteristic irrespective of gender, although it seems that male
+respondents have a less sharp distribution curve.
+
+**Attitude**
+
+Attitude possess the highest statistically significant correlation with
+the variable points (representing exam scores). As the correlation is
+positive and significant (0.437) for both males and females we can
+interpret it as the more positive attitude one has towards statistics,
+the higher one will perform on exams. It seems that male students have a
+slightly more neutral/positive attitude towards statistics as exhibited
+in the distribution curve. Female students, having a less sharp
+distribution curve, are more neutral/neutral towards statistics with
+extreme opinions (points on the tails of the distribution curves) being
+infrequent, This is confirmed in the mean attitudes with males having a
+mean of 3.443 and females having a mean of 2.990.
+
+**Deep**
+
+Deep has the second highest statistically significant correlation, with
+males using surface learning. This is negative correlation meaning that
+males who do surface learning are less likely to do deep learning. This
+correlation is not significant for female students. Both genders have
+similar means for deep learning meaning that males are only slightly
+more likely to do deep learning than the other. As the means are higher
+than the other learning types (3.657 for females, 3.725 for males), it
+means that these students engage in deep learning more often than other
+types of learning.
+
+**Strat**
+
+Strategic learning is the second highest type of learning used: in both
+males and females (females mean 3.201, males 2.964). Contrasting deep
+learning, it appears that female students use strategic learning more
+than male students (as seen in the mean). No statistically significant
+correlations are present, but the highest correlation is with age. It is
+a positive correlation (0.102), meaning that those who are older use
+strategic learning more often.
+
+**Surf**
+
+Surface learning has the third highest statistically significant
+correlation with the variable attitude. Males are negatively correlated
+(-0.374) meaning that male students who do surface learning are more
+often have a negative attitude towards statistics. Compared to deep
+learning and strategic learning, students appear to use surface learning
+less (2.830 mean for females, 2.704 for males).
+
+## Model Building 
+
+#### Step 1: Initial Model 
+
+```{r}
+# create and fit regression model with three explanatory variables 
+model <- lm(points ~ attitude + age + strat, data = students_learning2014)
+summary(model)
+```
+
+*Interpretations*
+
+From this model we can see that the combination of the three explanatory
+variables can explain up to 20.37% of the variation in a student's exams
+scores. While all these variables are significant, only attitude is
+significant above the 99% threshold. Age and strategic learning are
+significant with a 90% confidence interval with the p-values 0.0981 and
+0.0621 respectively.
+
+From the coefficients we can see that for every increase in a positive
+attitude the students exam score will increase by 3.48077 points. For
+age, as it is negative coefficient, for each increase in age the exam
+points will decrease by -0.08822. Finally, for strategic learning, each
+increase in use will result in 1.00371 increase in exam points.
+
+This model's F-statistic has a low associated p-value at p= 1.07e-08.
+
+#### Step 2: Re-Fitting the Model
+
+```{r}
+model2 <- lm(points ~ attitude, data = students_learning2014)
+summary(model2)
+```
+
+*Interpretations*
+
+If we remove the explanatory variables that are significant below a 95%
+confidence threshold, we are left with the attitude variable. As seen in
+the lower adjusted R-squared value (0.1865), this model has lower
+predictive power than the previous model. Attitude can explain
+approximately 18% of the variation in ones exam scores. An increase in
+attitude still results in a slightly higher increase in exam points,
+3.5255 compared to 3.48077, and the explanatory is still highly
+significant at p = 4.12e-09.
+
+#### Step 3: Model Diagnostics
+
+```{r}
+# place all four graphics in same plot
+par(mfrow = c(2,2))
+# draw diagnostic plots 
+plot(model2, which = c(1,2,5))
+
+```
+
+*Interpretations*
+
+From these diagnostics, it can be concluded that the final model is
+fairly appropriate. The residuals vs fitted plot shows enough randomness
+and does not appear to show and tunnel or curve patterns. The second
+plot, normal Q-Q, also confirms the models' appropriateness as these is
+little departure from linearity. For the final plot, Residuals vs
+Leverage, it looks like no points are outside of Cook's distance meaning
+that none of the outliers possess enough leverage or influence to
+drastically change the model. However, the points 56 and 35 could be
+investigated more closely as they are close.
