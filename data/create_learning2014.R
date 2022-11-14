@@ -10,7 +10,7 @@
 library(tidyverse)
 library(dplyr)
 
-# TASK 1 
+# TASK 1------------------------------------------------------------------------ 
 
 # read in data 
 lrn14 <- read.table("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt", 
@@ -23,10 +23,7 @@ str(lrn14) # explore structure of data
 dim(lrn14) # explore dimensions of data 
 # dataset has 183 rows and 60 columns
 
-# TASK 2 
-
-# divide each number in a vector to get a mean 
-c(1,2,3,4,5) / 2
+# TASK 2------------------------------------------------------------------------ 
 
 # create columns for attitude, deep, surface, and strategic learning 
 
@@ -69,7 +66,7 @@ names(learning2014) <- tolower(names(learning2014))
 # exclude observations where exam points are zero 
 learning2014 <- filter(learning2014, points > 0)
 
-# TASK 3
+# TASK 3------------------------------------------------------------------------
 
 getwd() # view current working directory 
 setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\Open Data Science\\IODS-project_2022\\data")
@@ -78,7 +75,7 @@ setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\
 write.csv(learning2014, "learning_2014.csv")
 
 # read created dataset 
-learning2014_test <- read.csv("learning_2014.csv")
+learning2014 <- read.csv("learning_2014.csv")
 # check data structure and ensure correct 
-str(learning2014_test)
-head(learning2014_test)
+str (learning2014)
+head(learning2014)
