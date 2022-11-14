@@ -100,7 +100,7 @@ ggpairs(students_learning2014[-1],                   # data, excluding X
 ```{r}
 students_learning2014[-1]  %>%
   split(.$gender) %>%
-  map(summary) #summary(students_learning2014)
+  map(summary) 
 ```
 
 *Interpretations*
