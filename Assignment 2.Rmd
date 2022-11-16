@@ -59,7 +59,7 @@ Below you can find a description of each variable present in the
 dataset:
 
 | Variable Name | Type             | Descriptor                                       |
-|----------------|----------------|----------------------------------------|
+|---------------|------------------|--------------------------------------------------|
 | X             | Integer          | order of the variables (1-166)                   |
 | Gender        | Character        | student's gender, either M or F                  |
 | Age           | Integer          | student's age                                    |
@@ -157,9 +157,9 @@ often have a negative attitude towards statistics. Compared to deep
 learning and strategic learning, students appear to use surface learning
 less (2.830 mean for females, 2.704 for males).
 
-## Model Building 
+## Model Building
 
-#### Step 1: Initial Model 
+#### Step 1: Initial Model
 
 ```{r}
 # create and fit regression model with three explanatory variables 
