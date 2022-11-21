@@ -1,0 +1,518 @@
+# Week 3 - Logistic Regression
+
+This week I have worked with logistic regression. This week was full of many  new concepts for me and I spent many hours on youtube watching "statquest" and "ritvikmath"'s videos on confusion matrices, loss functions and the like. Despite this large learning curve this week was enjoyable and I liked being able to begin to examine the predictive power of models! 
+
+```{r}
+date()
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 3: Logistic Regression
+
+### Relevant Libraries and Packages
+
+```{r, warning=FALSE, message =FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2) 
+library(purrr)
+library(knitr)
+library(patchwork)
+library(finalfit)
+library(stringr)
+library(caTools) 
+library(caret)
+```
+
+## Step 1: Reading in the Data
+
+```{r, warning=FALSE}
+# set working directory to access data
+setwd("C:\\Users\\Emilia\\Documents\\Uni Helsinki\\Year One\\Teaching Period 2\\Open Data Science\\IODS-project_2022\\data")
+
+# read data from previously wrangled file 
+alc_use <- read.csv("student_alc_use.csv", sep = ",", header = TRUE)
+```
+
+```{r}
+# explore data structure 
+dim(alc_use)
+str(alc_use)
+
+# display column names 
+print(colnames(alc_use))
+```
+
+*Explanations*
+
+Focusing on secondary students' achievement at two schools in Portugal,
+this data set contains consisting of 35 variables with 370 observations.
+Originally, this data set consisted of two focusing on achievement in
+two subjects: math and Portuguese. These two sets were merged by the
+author and now contain combined information for each student's
+achievement in each subject.
+
+Information about these variables was collected using school reports and
+questionnaires the variables included are "student grades, demographic,
+social and school related features". From the column names (seen above)
+it is clear that this data set covers these four aspects - with a
+special focus on social-related features. Variable types vary from
+integers, to numerical, character, and logical variables.
+
+Additional attribute information can be found following:
+<https://archive.ics.uci.edu/ml/datasets/Student+Performance>
+
+## Step 2: Hypotheses
+
+### Variable 1: Going Out
+
+The first hypothesis to be examined is based on the variable going out
+with friends. Essentially, my hypothesis is that those who go out with
+their friends more often will be more prone to high alcohol use. I
+assume that drinking alcohol is a social bonding activity and this is
+why those who go out more frequently are more likely to have higher use.
+
+### Variable 2: Study Time
+
+The second hypothesis is related to the variable study time. My
+hypothesis is that those who are studying more each week will have a
+lower chance of having high alcohol use. This hypothesis is purely based
+on my assumption that if you are spending the majority of your time
+studying, you will not have time to develop a high-use alcohol habit.
+
+### Variable 3: Health
+
+The third hypothesis relates to the health variable. As it could
+potentially exacerbate existing poor health I hypothesize that those
+with poor health are less likely to have high alcohol use.
+
+### Variable 4: Sex
+
+The final hypothesis focuses on the relationship between high alcohol
+use and sex. My hypothesis is that male students will have higher rates
+of alcohol use.
+
+## Step 3: Numerical and Graphical Exploration
+
+### Numerical
+
+```{r}
+keep_columns <- c("high_use",
+                  "goout", 
+                  "studytime", 
+                  "health",
+                  "sex"
+                  )
+alc_small <- select(alc_use, one_of(keep_columns))
+```
+
+```{r}
+alc_small %>%
+  split(.$high_use) %>%
+  map(summary)
+```
+
+```{r}
+dependent   <- "high_use"
+explanatory <- c("goout","studytime", "health","sex")
+
+alc_small %>% 
+  summary_factorlist(dependent, explanatory, p = TRUE,
+                     add_dependent_label = TRUE)
+```
+
+*Interpretations*
+
+From the numerical summaries we can see that those with high-use alcohol
+consumption are more likely to be male, go out more and spend less time
+studying. We can also see from the first summary table that there are
+259 students who are not high-use and 111 who are.
+
+It appears that those who go out more often are more likely to have
+higher alcohol consumption. This is confirmed in previous summary table
+the higher means present in the going out (3.73 for True, 2.853 for
+False). These results are significant at a p-value of p = \<0.001.
+
+As for study time, the majority of those with high alcohol use study
+below 5 hours a week (42 for under 2 hours and 57 for under 5 hours). We
+can also see this in mean summary with a 1.77 average for those with
+high-use and a 2.16 average for those who do not have high-use. These
+results are significant at p= \<0.001.
+
+With a p value of p = 0.134, the only non-statistically significant
+results are those related to health. It can be observed that there is
+not a large difference between those who did not drink 3.5 and those who
+did 3.7. Perhaps then, in the context of this data set, one's health
+does not have a large effect on whether or not one drinks a lot.
+
+Sex, as it is a character, was not covered in the first summary.
+However, in the second summary it can be observed that there males
+represent 63.1% of the high-use drinkers whereas females represent
+36.9%. Rather intuitively these results are flipped with those who are
+not high-use. These results are significant at p= \<0.001 which makes it
+significant at a 99% CI.
+
+### Graphical
+
+#### Box Plot
+
+```{r}
+alc_small %>% 
+  ggplot(aes(studytime)) +
+  geom_boxplot() +
+  scale_y_discrete(breaks = NULL, labels = NULL, name = NULL)
+```
+
+*Interpretations*
+
+It appears as though the majority of students study between 1-5 hours a
+week (range of values 1 and 2). As for those who study above ten hours a
+week (value 4) it appears that these students are outliers in this
+dataset.
+
+```{r}
+alc_small %>% 
+  ggplot(aes(goout)) +
+  geom_boxplot() +
+  scale_y_discrete(breaks = NULL, labels = NULL, name = NULL)
+```
+
+*Interpretations*
+
+Compared to the study time variable, it appears that the going out
+variable is normally distributed. The majority of students go out with
+their friends an average amount with the tails (very low and very high)
+following a normal bell curve.
+
+```{r}
+alc_small %>% 
+  ggplot(aes(health)) +
+  geom_boxplot() +
+  scale_y_discrete(breaks = NULL, labels = NULL, name = NULL)
+
+```
+
+*Interpretations*
+
+It appears that the distribution of the health variable is skewed to an
+average to very good health status (values 3-5). The majority of
+students seem to have reported having a good health status (value 4),
+with very few reporting very bad health.
+
+#### Count and Proportions
+
+```{r}
+p1 <- alc_small %>% 
+  ggplot(aes(x = goout, 
+             fill = high_use)) + 
+  geom_bar() + 
+  theme(legend.position="none")+
+  coord_flip() +                               # flip for axis readability + 
+  labs(x = "Frequency of Going Out",           # label axes (flipped for coord-flip)
+       y = "Count") 
+
+p2 <- alc_small %>% 
+  ggplot(aes(x = goout, 
+             fill = high_use,
+             )) + 
+  geom_bar(position = "fill") +
+  coord_flip() +                               # flip for axis readability 
+  theme(legend.position = NULL)+         
+  labs(x = "",                                 # label axes (flipped for coord-flip)
+       y = "Proportion") +  
+  guides(fill = guide_legend(reverse = FALSE)) # reverse legend order
+
+p1 + p2
+```
+
+*Interpretations*
+
+From the proportion visualization, it is clear that those who are going
+out more often are more likely to have higher use of alcohol. A clear
+jump is seen between the frequency of 3 (average) and 4 (high). Perhaps
+this is because the majority of students answered that they see their
+friends an average amount and this large n evened out the results.
+
+These results fall in line with my hypothesis that those students who go
+out more are have a higher probability of having higher levels of
+alcohol consumption.
+
+```{r}
+p3 <- alc_small %>% 
+  ggplot(aes(x = studytime, 
+             fill = high_use)) + 
+  geom_bar() + 
+  theme(legend.position="none")+
+  coord_flip() +                               # flip for axis readability + 
+  labs(x = "Time Spent Studying ",             # label axes (flipped for coord-flip)
+       y = "Count") 
+
+p4 <- alc_small %>% 
+  ggplot(aes(x = studytime, 
+             fill = high_use,
+             )) + 
+  geom_bar(position = "fill") +
+  coord_flip() +                               # flip for axis readability 
+  theme(legend.position = NULL)+         
+  labs(x = "",                                 # label axes (flipped for coord-flip)
+       y = "Proportion") +  
+  guides(fill = guide_legend(reverse = FALSE)) # reverse legend order
+
+p3 + p4
+```
+
+*Interpretations*
+
+Inverse to the going out variable, it appears that the more time one
+spends on one's studies, the less likely one is to have higher levels of
+alcohol consumption. However, it should be noted that students who study
+more than 10 hours a week are outliers within this dataset and therefore
+the proportion is perhaps not representative.
+
+These results align with my hypothesis that students who spent more time
+studying are less probable to consume alcohol at high levels.
+
+```{r}
+p5 <- alc_small %>% 
+  ggplot(aes(x = health, 
+             fill = high_use)) + 
+  geom_bar() + 
+  theme(legend.position="none")+
+  coord_flip() +                               # flip for axis readability + 
+  labs(x = "Health Status",                    # label axes (flipped for coord-flip)
+       y = "Count") 
+
+p6 <- alc_small %>% 
+  ggplot(aes(x = health, 
+             fill = high_use,
+             )) + 
+  geom_bar(position = "fill") +
+  coord_flip() +                               # flip for axis readability 
+  theme(legend.position = NULL)+         
+  labs(x = "",                                 # label axes (flipped for coord-flip)
+       y = "Proportion") +  
+  guides(fill = guide_legend(reverse = FALSE)) # reverse legend order
+
+p5 + p6
+```
+
+*Interpretations*
+
+Compared to the other two variables, health shows no trend when it comes
+to the relationship between health status and alcohol consumption. This
+makes sense as it was the only variable which did not possess a
+significant p-value (p=0.134).
+
+These results do not fit my hypothesis as I thought that those with
+worse health (1 = very bad) would drink less than those with good health
+(5 = very good). Therefore, this hypothesis will be rejected.
+
+#### Relationship
+
+```{r}
+p1 <- alc_small%>% 
+    ggplot(aes(x = high_use, 
+               y =goout, 
+               col = sex)) +
+    geom_point(shape = 1, alpha = 0.5) + 
+    geom_jitter(width = 0.1, height = 0.1, alpha = 0.7) +
+    labs(x = "High Use of Alcohol", 
+         y = "Rate of Going out")
+
+p2 <- alc_small%>% 
+    ggplot(aes(x = high_use, 
+               y = studytime, 
+               col = sex)) +
+    geom_point(shape = 1, alpha = 0.5) + 
+    geom_jitter(width = 0.1, height = 0.1, alpha = 0.7) +
+    labs(x = "High Use of Alcohol", 
+         y = "Time Spent Studying")
+p3 <- alc_small%>% 
+      ggplot(aes(x = high_use, 
+                 y = health, 
+                 col = sex)) +
+      geom_jitter(width = 0.1, height = 0.1, alpha = 0.7) +
+      labs(x = "High Use of Alcohol", 
+           y = "Current Health Condition")
+
+p1 
+p2 
+p3
+```
+
+*Interpretations*
+
+Like the above visualizations, this one confirms the hypotheses
+regarding going out and study time, but rejects the third related to
+health. These hypotheses are confirmed through observing the clustering
+of points. As this visualization adds the sex dimension, it is
+interesting to see if any observations regarding the relationship
+between alcohol use and sex can be made.
+
+From the rate of going out visualization it appears to be that those who
+have high-use and go out very often are largely male. This can also be
+observed in the group of those who go out quite often. For the second
+visualization, it appears that those who study less than two hours a
+week and have a high-use are more likely to be male. Finally, for the
+third visualization no clear patterns in sex are present.
+
+Due to over-fitting it is quite hard to see from this visualization what
+role sex might play in high alcohol use. Therefore, I will move on to
+the logistic regression section of this report to examine this
+hypothesis in more detail.
+
+## Step 4: Logistic Regression
+
+### Model Creation
+
+```{r}
+model1 <- glm(high_use ~ goout + studytime + health + sex, data = alc_small, family = "binomial")
+```
+
+### Model Summary
+
+```{r}
+summary(model1)
+```
+
+*Interpretations*
+
+From this model we can see that three of the four explanatory variables
+are statistically significant. These three variables are significant at
+different confidence intervals however, and only going out is
+significant at the 99% threshold. The other two variables, study time
+and sex, are significant with a 95% confidence interval (p =3.03e-10 and
+a 90% CI (p =0.01073) respectively.
+
+From the coefficients we can see that the effect of going out on high
+alcohol use is an increase in the risk for high-alcohol use with the
+more on goes out (0,75535). For study time, as it is negative
+coefficient, for each increase in time spent studying there will be a
+reduction in the risk for high alcohol use (-0.49173). As for health,
+there is no significant effect. Finally, for sex, if the sex is male it
+will result in a risk increase (0.67717).
+
+### Coefficients and Odds Ratios
+
+```{r}
+# compute odds ratios (OR)
+OR <- coef(model1) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(model1) %>% exp 
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+
+*Interpretations*
+
+From the odds ratios we can that those who go out more often are 2.13
+times more likely to have high alcohol use. It also is seen that those
+of the male sex are 1.97 times more likely to have high alcohol use
+level. Comparatively, study time has a lower ratio with it being only
+0.61 times more likely to have high alcohol use if you have
+
+Below, the odds ratio and the confidence interval difference can be
+seen. The confidence interval difference represents the range which is
+represented within the 95% confidence interval.
+
+| Variable   | OR   | Confidence Interval Difference |
+|------------|------|--------------------------------|
+| Going out  | 2.13 | 1.02 (1.01951459)              |
+| Study Time | 0.61 | 0.41 (0.4120806)               |
+| Health     | 1.11 | 0.40 (0.40074558)              |
+| Sex        | 1.97 | 2.15 (2.15400134)              |
+
+## Step 5: Predictive power
+
+Using the variables which, according to your logistic regression model,
+had a statistical relationship with high/low alcohol consumption,
+explore the predictive power of you model.
+
+#### Model Creation
+
+```{r}
+final_model <- glm(high_use ~ goout + studytime + sex, data = alc_small, family = "binomial")
+```
+
+Provide a 2x2 cross tabulation of predictions versus the actual values
+and optionally display a graphic visualizing both the actual values and
+the predictions.
+
+#### Cross tabulations: Predicted vs Actual
+
+##### Numerical
+
+```{r}
+# predict() the probability of high_use
+probabilities <- predict(final_model, type = "response")
+
+# add the predicted probabilities to 'alc_small'
+alc_small <- mutate(alc_small, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc_small <- mutate(alc_small, prediction = alc_small$probability > 0.5)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc_small$high_use, prediction = alc_small$prediction)
+```
+
+##### Total Training Error 
+
+proportion = `(false positive +  false negative)/n`
+
+proportion = `(25 + 58)/370`
+
+proportion = 0.2243
+
+```{r}
+confusionMatrix(
+  factor(alc_small$prediction), 
+  factor(alc_small$high_use))
+```
+
+*Interpretations*
+
+As we can see from the confusion matrix and total training error
+proportion, most of the time the model is right but it is wrong enough
+of the time to not be helpful. We can see that the total training error is around 22%, meaning that the model is inaccurate 22% of the time and accurate 77%. The model struggles to predict true positives as accurately and produces a lot of false positives. I am not entirely sure
+why this is, perhaps because the data the model was trained on did not contain enough when positive high-use values when compared to false values.
+
+Although I am not at the point where I can interpret the other outputs
+(Kappa, Sensitivity etc.), I hope to reach there one day!
+
+##### Graphical
+
+```{r}
+# create confusion matrix 
+cmat <- confusionMatrix(
+  factor(alc_small$prediction), 
+  factor(alc_small$high_use))
+
+# visualize confusion matrix 
+fourfoldplot(cmat$table, color = c("cyan", "pink"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
+
+```
+
+*Final Interpretations and Model/Hypotheses Comparison*
+
+A generous reading of the confusion matrix and the performance of the
+model would say that the model predicts false values correctly 9/10 of
+the time and positive values correctly 1/2 of the time. I do not believe
+that my simple guessing strategies would be able to reach this level of
+accuracy. When guessing, I often rely on broad generalizations (those
+who go out must drink more) to reach my conclusions. My hypotheses were
+thus oversimplified and did not reveal the nuance in the data. A clear
+example was that those who go out often have a 50% chance of having high
+alcohol use or not. Therefore, in order to reach the model accuracy, I
+would need to take more factors into account during my guessing. Yes, it
+is true that male students do drink more but is how much they drink
+proportionally to their weight taken into account? Therefore, while a
+simple guessing strategy can perhaps point the researcher which way to
+look, I do not think it can predict results as accurately as a
+well-built model can.
