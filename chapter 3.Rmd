@@ -6,8 +6,8 @@ This week I have worked with logistic regression. This week was full of many  ne
 date()
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Assignment 3: Logistic Regression

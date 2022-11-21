@@ -59,7 +59,7 @@ Below you can find a description of each variable present in the
 dataset:
 
 | Variable Name | Type             | Descriptor                                       |
-|---------------|------------------|--------------------------------------------------|
+|----------------|----------------|----------------------------------------|
 | X             | Integer          | order of the variables (1-166)                   |
 | Gender        | Character        | student's gender, either M or F                  |
 | Age           | Integer          | student's age                                    |
