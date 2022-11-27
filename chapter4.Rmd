@@ -1,0 +1,366 @@
+# Week 4 - Clustering and Classification
+
+I have never worked with clustering or classification before this week. Therefore, it was incredibly challenging and I really struggled to understand how to interpret these results. 
+
+```{r}
+date()
+```
+
+```{r, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 4: Clustering and Classification
+
+## Relevant Libraries and Packages
+
+```{r, message = FALSE, warning = FALSE}
+library(MASS)
+library(tidyr)
+library(corrplot)
+library(dplyr)
+library(ggplot2)
+library(lattice)    # for box plots 
+library(reshape2)   # converting data to long format
+library(factoextra) # k-means visualization 
+library(ggpubr)     # k-means visualization 
+```
+
+## Step 1: Reading in the Data
+
+```{r}
+# load the data
+data(Boston)
+
+# explore the data set
+str(Boston)
+dim(Boston)
+```
+
+*Explanations*
+
+Containing data on housing values in suburbs of Boston, this data set consists of 14 columns and 506 rows. Explanations of the variables can be seen below:
+
+| Variable Name | Variable Type | Explanation                                                            |
+|----------------|---------------|-----------------------------------------|
+| crim          | numeric       | per capita crime rate by town                                          |
+| zn            | numeric       | proportion of residential land zoned for lots over 25,000 sq.ft        |
+| indus         | numeric       | proportion of non-retail business acres per town                       |
+| chas          | integer       | Charles River dummy variable (= 1 if tract bounds river; 0 otherwise). |
+| nox           | numeric       | nitrogen oxides concentration (parts per 10 million)                   |
+| rm            | numeric       | average number of rooms per dwelling.                                  |
+| age           | numeric       | proportion of owner-occupied units built prior to 1940                 |
+| dis           | numeric       | weighted mean of distances to five Boston employment centres           |
+| rad           | integer       | index of accessibility to radial highways                              |
+| tax           | numeric       | full-value property-tax rate per \$10,000                              |
+| ptratio       | numeric       | pupil-teacher ratio by town                                            |
+| black         | numeric       | 1000(Bk−0.63)2 where Bk is the proportion of blacks by town            |
+| lstat         | numeric       | lower status of the population (percent)                               |
+| medv          | numeric       | median value of owner-occupied homes in \$1000s                        |
+
+## Step 2: Graphical and Numerical Exploration
+
+### Graphical Overview 
+
+#### Boxplots
+
+```{r, fig.width=9, warning=FALSE, message = FALSE}
+# convert data to long format 
+Boston_long <- melt(Boston)
+
+# create boxplot for all variables 
+bwplot(value ~ variable, Boston_long)
+```
+*Interpretations* 
+
+From this initial visualization it is clear that at least three variables (crim, zn and black) posses large numbers of outliers. However, due to the massive variance in scale across variables this is not an effective visualization. Therefore, the variables' distributions will be visualized in smaller box plot groups. 
+
+As we are interested in the variables distributions, we will create a data set containing those which are closest in scale and then visualize those. 
+```{r}
+# remove columns with largest scale variance
+box_boston = subset(Boston, select = -c(tax,black))
+```
+
+```{r}
+boxplot(box_boston[1:3], col = "palegreen3", horizontal = TRUE)
+```
+*Interpretations* 
+
+A closer look at these boxplots confirms what was shown in the larger plot above. "Crim" and "zn" both possess many outliers and the distributions appear to be skewed to the right. Comparatively, "indus" seems to be distributed more evenly,  although it appears to be left-leaning. 
+
+```{r}
+boxplot(box_boston[4:6],  col = "palegreen3", horizontal = TRUE)
+```
+*Interpretations* 
+
+Above, we can see that "rm" possesses quite a few outliers with large tails on both sides of the distribution. Due to scale variance, it is hard to see the distribution of "nox" clearly. Despite this, it can appears to be left-leaning.  
+
+As "chas" is a dummy variable, it's value is either 0-1 and is therefore not suited well to box plot visualization. 
+
+```{r}
+boxplot(box_boston[7:9], col = "palegreen3", horizontal = TRUE)
+```
+*Interpretations* 
+
+```{r}
+boxplot(box_boston[10:12], col = "palegreen3", horizontal = TRUE)
+```
+*Interpretations* 
+
+
+### Relationship 
+
+```{r, fig.height=6, fig.width=10}
+pairs(Boston)
+```
+*Interpretations* 
+
+????? focus on relationship 
+
+*Note* 
+
+For some reason I cannot get this visualization to knit in a way where it can be seen properly. If whoever is reading this knows how to format large visualizations like this for knitting, please let me know! 
+
+### Numerical Overview 
+#### Summaries 
+```{r}
+summary(round(Boston, digits = 2))
+```
+*Interpretations* 
+
+focus on distributions. Results from the numerical summary confirm the distributions which were visualized graphically above. 
+
+We can see that tax has the
+
+### Step 3: Standardize data set & variable creation    
+
+#### Standardize 
+```{r}
+# center and standardize variables
+boston_scaled <- scale(Boston)
+
+# summaries of the scaled variables
+summary(boston_scaled)
+
+# class of the boston_scaled object
+class(boston_scaled)
+
+# change the object to data frame
+boston_scaled <- as.data.frame(boston_scaled)
+```
+*Interpretations* 
+
+After standardizing, we can see that many variable values have become negative. The maximum values are also much closer across all variables. 
+
+#### Categorical variable creation 
+
+```{r}
+# create a quantile vector of crim 
+bins <- quantile(boston_scaled$crim)
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, 
+             breaks = bins, 
+             include.lowest = TRUE, 
+             labels = c("low", "med_low", "med_high", "high"))
+
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+
+```
+
+#### Train and Test set
+
+```{r}
+boston_scaled$crime <- factor(boston_scaled$crime, 
+                              levels = c("low", 
+                                         "med_low",
+                                         "med_high", 
+                                         "high"))
+
+# choose randomly 80% of the rows in data set
+ind <- sample(nrow(boston_scaled),  size = nrow(boston_scaled) * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+```
+
+## Step 4: Linear Discriminant Analysis
+
+Fit the linear discriminant analysis on the train set. Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+
+```{r}
+# linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = train)
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows
+lda.arrows(lda.fit, myscale = 1)
+```
+
+## Task 5: BETTER NAME
+
+```{r}
+# save the correct classes from test data
+correct_classes <- test$crime
+
+# remove the crime variable from test data
+test <- dplyr::select(test, -crime)
+
+# predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+
+lda.pred$class
+correct_classes
+
+# cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+*Interpretations* 
+
+HOW TO INTERPRET THIS ??? 
+
+## Step 6: K-means clustering 
+
+### Reading in Data (again)
+```{r}
+# re-load the data
+data(Boston)
+
+# center and standardize variables
+Boston_clustering <- scale(Boston)
+
+Boston_clustering <- as.data.frame(Boston_clustering)
+```
+
+### Calculating Distances
+```{r}
+# euclidean distance matrix
+dist_eu <- dist(Boston_clustering, method = "euclidean")
+
+# manhattan distance matrix
+dist_man <- dist(Boston_clustering, method = "manhattan")
+```
+
+### K-means Algorithm
+
+#### Attempt One
+```{r}
+# k-means clustering
+km <- kmeans(Boston_clustering, centers = 3)
+```
+
+#### Optimizing 
+
+```{r}
+set.seed(123)
+
+# determine the number of clusters
+k_max <- 10
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(Boston_clustering, k)$tot.withinss})
+
+# visualize the results
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+
+# clean up visualization
+fviz_nbclust(Boston_clustering, 
+             kmeans, 
+             nstart=100, 
+             method = "wss") + 
+  geom_vline(xintercept = 2, linetype = 1)
+```
+*Interpretations* 
+
+Looking at the "elbow" of the above plot, it seems like the optimal number of clusters is 2. Therefore, analysis will continue with 2 clusters. 
+
+### Visualizations 
+```{r}
+# kmeans clustering 
+km <- kmeans(Boston_clustering, centers = 2)
+
+fviz_cluster(km, 
+             data = Boston_clustering, 
+             geom = c("point"),
+             ellipse.type = "euclid", 
+             ellipse.alpha = 0.1,
+             ggtheme = theme_bw())
+
+```
+
+```{r}
+fviz_cluster(km, data = Boston_clustering,
+             palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
+             geom = "point",
+             ellipse.type = "convex", 
+             ggtheme = theme_bw()
+             )
+```
+*Interpretations* 
+
+HOW TO INTERPRET THESE RESULTS ?????? 
+
+are these two graphs enough???? 
+
+## Bonus 1 
+
+Bonus: Perform k-means on the original Boston data with some reasonable number of clusters (> 2). Remember to standardize the dataset. 
+
+Then perform LDA using the clusters as target classes.
+
+Include all the variables in the Boston data in the LDA model. 
+
+Visualize the results with a biplot (include arrows representing the relationships of the original variables to the LDA solution).
+
+Interpret the results. Which variables are the most influential linear separators for the clusters?
+
+(0-2 points to compensate any loss of points from the above exercises
+
+```{r}
+# linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = Boston_clustering)
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(km$cluster)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows
+lda.arrows(lda.fit, myscale = 1)
+```
+
+
+
+
+
