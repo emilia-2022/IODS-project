@@ -67,8 +67,4 @@ gii$Edu2.MF = gii$Edu2.M/gii$Edu2.F
 # TASK 4------------------------------------------------------------------------
 
 # join together the two data sets 
-<<<<<<< HEAD
-=======
-
->>>>>>> 79fec616318ec0b5d8debf835f99e8d963ab9360
 human <- inner_join(hd, gii, by = "Country")
