@@ -1,6 +1,10 @@
+---
+---
+---
+
 # Week 4 - Clustering and Classification
 
-I have never worked with clustering or classification before this week. Therefore, it was incredibly challenging and I really struggled to understand how to interpret these results. 
+I have never worked with clustering or classification before this week. Therefore, it was incredibly challenging and I really struggled to understand how to interpret these results. I am not really sure why we used this set of this data set to understand crime when the data was related to housing values. Why not use it to look at housing values? I still am not really sure what the two clusters in the final output really represent, any good resources for interpretation would be appreciated!
 
 ```{r}
 date()
@@ -18,12 +22,13 @@ date()
 library(MASS)
 library(tidyr)
 library(corrplot)
-library(dplyr)
+library(tidyverse)
 library(ggplot2)
 library(lattice)    # for box plots 
 library(reshape2)   # converting data to long format
 library(factoextra) # k-means visualization 
 library(ggpubr)     # k-means visualization 
+library(GGally)     # ggpairs
 ```
 
 ## Step 1: Reading in the Data
@@ -39,10 +44,10 @@ dim(Boston)
 
 *Explanations*
 
-Containing data on housing values in suburbs of Boston, this data set consists of 14 columns and 506 rows. Explanations of the variables can be seen below:
+Containing data on housing values in suburbs of Boston, this data set consists of 14 columns and 506 rows. Each variable can be considered one which influences housing value in these suburbs. Explanations for each of the variables can be seen below:
 
 | Variable Name | Variable Type | Explanation                                                            |
-|----------------|---------------|-----------------------------------------|
+|------------------|------------------|-------------------------------------|
 | crim          | numeric       | per capita crime rate by town                                          |
 | zn            | numeric       | proportion of residential land zoned for lots over 25,000 sq.ft        |
 | indus         | numeric       | proportion of non-retail business acres per town                       |
@@ -60,7 +65,7 @@ Containing data on housing values in suburbs of Boston, this data set consists o
 
 ## Step 2: Graphical and Numerical Exploration
 
-### Graphical Overview 
+### Graphical Overview
 
 #### Boxplots
 
@@ -71,11 +76,13 @@ Boston_long <- melt(Boston)
 # create boxplot for all variables 
 bwplot(value ~ variable, Boston_long)
 ```
-*Interpretations* 
 
-From this initial visualization it is clear that at least three variables (crim, zn and black) posses large numbers of outliers. However, due to the massive variance in scale across variables this is not an effective visualization. Therefore, the variables' distributions will be visualized in smaller box plot groups. 
+*Interpretations*
 
-As we are interested in the variables distributions, we will create a data set containing those which are closest in scale and then visualize those. 
+From this initial visualization it is clear that at least three variables (crim, zn and black) posses large numbers of outliers. However, due to the massive variance in scale across variables this is not an effective visualization. Therefore, the variables' distributions will be visualized in smaller box plot groups.
+
+As we are interested in the variables distributions, we will create a data set containing those which are closest in scale and then visualize those.
+
 ```{r}
 # remove columns with largest scale variance
 box_boston = subset(Boston, select = -c(tax,black))
@@ -84,57 +91,65 @@ box_boston = subset(Boston, select = -c(tax,black))
 ```{r}
 boxplot(box_boston[1:3], col = "palegreen3", horizontal = TRUE)
 ```
-*Interpretations* 
 
-A closer look at these boxplots confirms what was shown in the larger plot above. "Crim" and "zn" both possess many outliers and the distributions appear to be skewed to the right. Comparatively, "indus" seems to be distributed more evenly,  although it appears to be left-leaning. 
+*Interpretations*
+
+A closer look at these boxplots confirms what was shown in the larger plot above. "Crim" and "zn" both possess many outliers and the distributions appear to be skewed to the right. Comparatively, "indus" seems to be distributed more evenly, although it appears to be left-leaning.
 
 ```{r}
 boxplot(box_boston[4:6],  col = "palegreen3", horizontal = TRUE)
 ```
-*Interpretations* 
 
-Above, we can see that "rm" possesses quite a few outliers with large tails on both sides of the distribution. Due to scale variance, it is hard to see the distribution of "nox" clearly. Despite this, it can appears to be left-leaning.  
+*Interpretations*
 
-As "chas" is a dummy variable, it's value is either 0-1 and is therefore not suited well to box plot visualization. 
+Above, we can see that "rm" possesses quite a few outliers with large tails on both sides of the distribution. Due to scale variance, it is hard to see the distribution of "nox" clearly. Despite this, it can appears to be left-leaning. "Chas" is a dummy variable, it's value is either 0-1 and is therefore not suited well to box plot visualization.
 
 ```{r}
 boxplot(box_boston[7:9], col = "palegreen3", horizontal = TRUE)
 ```
-*Interpretations* 
+
+*Interpretations*
+
+"Rad" is a right-leaning distribution. It seems that the average house has has an index of access 10 to the radial highway. As for age, it appears as though around 70% of the buildings in these suburbs were built prior to 1940. The distribution has long tails which makes sense since it is in percent format. For "dis" some outliers appear on the right tail of the data.
 
 ```{r}
 boxplot(box_boston[10:12], col = "palegreen3", horizontal = TRUE)
 ```
-*Interpretations* 
 
+*Interpretations*
 
-### Relationship 
+"Medv" seems to possess quite a few outliers, with an average around 20, meaning that the average median for owner occupied homes is around 20,000\$. "Lstat"also possess some outliers and appears to be left leaning. There seems to be an average of 14% of lower-status population in these suburbs (although I am not entirely sure what "lower-status population" refers to). Ptratio" seems to have a right-leaning distribution with a few outliers on the left tail.
+
+#### Relationship
 
 ```{r, fig.height=6, fig.width=10}
 pairs(Boston)
 ```
-*Interpretations* 
 
-????? focus on relationship 
+*Interpretations*
 
-*Note* 
+As this data uses such varying scales it is tough to comment on the relationship between variables in a meaningful way before scaling the data. However, from this scatterplot matrix it can be see that there appears to be a positive relationship between "rm" and "medv". This makes intuitive sense as the more rooms a house has, the higher value it should be. "Rm" also seems to have a negative relationship with "lstat", meaning that the higher the percentage lower-status population, the lower the average numer of rooms per home.
 
-For some reason I cannot get this visualization to knit in a way where it can be seen properly. If whoever is reading this knows how to format large visualizations like this for knitting, please let me know! 
+*Note:* For some reason I cannot get this visualization to knit in a way where it can be seen properly. If whoever is reading this knows how to format large visualizations like this for knitting, please let me know!
 
-### Numerical Overview 
-#### Summaries 
+### Numerical Overview
+
+#### Summaries
+
 ```{r}
 summary(round(Boston, digits = 2))
 ```
-*Interpretations* 
 
-focus on distributions. Results from the numerical summary confirm the distributions which were visualized graphically above. 
+*Interpretations*
 
-We can see that tax has the
+Results from the numerical summary confirm the distributions which were visualized graphically above. Each variable has a varying scale which makes it hard to compare means across variables. However, we can see that both "tax" and "black" have large ranges which confirm their respective boxplots seen in the first visualization.
 
-### Step 3: Standardize data set & variable creation    
+To make the data more comparable we will now standardize the data set.
 
-#### Standardize 
+### Step 3: Standardize data set & variable creation
+
+#### Standardize
+
 ```{r}
 # center and standardize variables
 boston_scaled <- scale(Boston)
@@ -148,11 +163,12 @@ class(boston_scaled)
 # change the object to data frame
 boston_scaled <- as.data.frame(boston_scaled)
 ```
-*Interpretations* 
 
-After standardizing, we can see that many variable values have become negative. The maximum values are also much closer across all variables. 
+*Interpretations*
 
-#### Categorical variable creation 
+After standardizing, we can see that many variable values have become negative. The maximum values are also much closer across all variables. This step is crucial to perform Linear Discriminant Analysis (LDA) as LDA works under the assumption that each of the predictor variables have the same variance.
+
+#### Categorical variable creation
 
 ```{r}
 # create a quantile vector of crim 
@@ -169,7 +185,6 @@ boston_scaled <- dplyr::select(boston_scaled, -crim)
 
 # add the new categorical value to scaled data
 boston_scaled <- data.frame(boston_scaled, crime)
-
 ```
 
 #### Train and Test set
@@ -192,8 +207,6 @@ test <- boston_scaled[-ind,]
 ```
 
 ## Step 4: Linear Discriminant Analysis
-
-Fit the linear discriminant analysis on the train set. Use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables. Draw the LDA (bi)plot. (0-3 points)
 
 ```{r}
 # linear discriminant analysis
@@ -218,7 +231,11 @@ lda.arrows
 lda.arrows(lda.fit, myscale = 1)
 ```
 
-## Task 5: BETTER NAME
+*Interpretations*
+
+From the length of the arrows we can see that "rad", "nox", and "zn" have the largest variation in the data set.Unfortunately, due to overlapping values it is hard to interpret the angles- which represent the relationship - between the arrows. Despite these difficulties, a potential right-angle can be seen between "rad" and "nox" meaning that they are not highly correlated.
+
+## Step 5: Cross Tabulation
 
 ```{r}
 # save the correct classes from test data
@@ -230,19 +247,28 @@ test <- dplyr::select(test, -crime)
 # predict classes with test data
 lda.pred <- predict(lda.fit, newdata = test)
 
-lda.pred$class
-correct_classes
-
 # cross tabulate the results
 table(correct = correct_classes, predicted = lda.pred$class)
 ```
-*Interpretations* 
 
-HOW TO INTERPRET THIS ??? 
+*Interpretations*
 
-## Step 6: K-means clustering 
+We can calculate the accuracy of the model following:
+
+$$
+Accuracy = \frac{\text{Number of correct predictions}}{\text{Total number of predictions}}
+$$
+
+$$
+Accuracy = \frac{20 + 20 + 13 + 24}{102} = 0.75
+$$
+
+The model is accurate about 75% of the time. It appears that the model is very good at predicting levels of high crime with 0 predictions in the other categories. However, for low crime it often predicts higher than it should. The model performs similarly with med_low and med_high values with only 5 and 6 wrong predicted values respectively.
+
+## Step 6: K-means clustering
 
 ### Reading in Data (again)
+
 ```{r}
 # re-load the data
 data(Boston)
@@ -254,6 +280,7 @@ Boston_clustering <- as.data.frame(Boston_clustering)
 ```
 
 ### Calculating Distances
+
 ```{r}
 # euclidean distance matrix
 dist_eu <- dist(Boston_clustering, method = "euclidean")
@@ -265,14 +292,15 @@ dist_man <- dist(Boston_clustering, method = "manhattan")
 ### K-means Algorithm
 
 #### Attempt One
+
 ```{r}
 # k-means clustering
 km <- kmeans(Boston_clustering, centers = 3)
 ```
 
-#### Optimizing 
+#### Optimizing
 
-```{r}
+```{r, warning = FALSE}
 set.seed(123)
 
 # determine the number of clusters
@@ -291,13 +319,14 @@ fviz_nbclust(Boston_clustering,
              method = "wss") + 
   geom_vline(xintercept = 2, linetype = 1)
 ```
-*Interpretations* 
 
-Looking at the "elbow" of the above plot, it seems like the optimal number of clusters is 2. Therefore, analysis will continue with 2 clusters. 
+*Interpretations*
 
-### Visualizations 
+Looking at the "elbow" of the above plot, it seems like the optimal number of clusters is 2. Therefore, analysis will continue with 2 clusters.
+
+### Visualizations
+
 ```{r}
-# kmeans clustering 
 km <- kmeans(Boston_clustering, centers = 2)
 
 fviz_cluster(km, 
@@ -309,33 +338,31 @@ fviz_cluster(km,
 
 ```
 
-```{r}
-fviz_cluster(km, data = Boston_clustering,
-             palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
-             geom = "point",
-             ellipse.type = "convex", 
-             ggtheme = theme_bw()
-             )
+```{r, message=FALSE, warning=FALSE}
+# create cluster as categorical variable for visualization 
+Boston_clustering$km_cluster <- km$cluster
+Boston_clustering <- Boston_clustering %>%
+  mutate(
+    cluster = km_cluster %>% factor() %>% 
+      fct_recode("Cluster 1" = "1", 
+                 "Cluster 2" = "2")
+  )
+
+# visualize (for readability ease only the tail of the data)
+p <- ggpairs(Boston_clustering[c(8:14)],
+             mapping = aes(col = Boston_clustering$cluster, alpha = 0.3), 
+             lower = list(combo = wrap("facethist", bins = 20)))
+
+p
 ```
-*Interpretations* 
 
-HOW TO INTERPRET THESE RESULTS ?????? 
+*Interpretations*
 
-are these two graphs enough???? 
+I am not really sure how to interpret the first plot, but I think the center points were the centroids used for analysis. We can also see the spread of the clusters, but I am unsure what the x and y axis values represent. If anyone has any resources on how to interpret this output, please share them in the feedback!
 
-## Bonus 1 
+From the second plot, we can see that for two variable pairs - "lstat" and "medv" and "rad" and "tax" both clusters are statistically significant. It can also be seen how the distributions differ between the two clusters quite clearly, For example, in the "tax" variable we can see that the distributions peak on almost opposite ends of the scale. I would guess that this means that those in cluster one (lower crime) have lower property tax rate and those in cluster two (higher crime) have higher property tax. However, I am not entirely sure of this interpretation!
 
-Bonus: Perform k-means on the original Boston data with some reasonable number of clusters (> 2). Remember to standardize the dataset. 
-
-Then perform LDA using the clusters as target classes.
-
-Include all the variables in the Boston data in the LDA model. 
-
-Visualize the results with a biplot (include arrows representing the relationships of the original variables to the LDA solution).
-
-Interpret the results. Which variables are the most influential linear separators for the clusters?
-
-(0-2 points to compensate any loss of points from the above exercises
+## Bonus 1
 
 ```{r}
 # linear discriminant analysis
@@ -360,7 +387,6 @@ lda.arrows
 lda.arrows(lda.fit, myscale = 1)
 ```
 
+*Interpretations*
 
-
-
-
+Once again, not entirely sure of the interpretations. For the black cluster it appears as though"rad" are the most influential linear separators. Interpret the results. For the red cluster it could be that "zn" is an influential linear separator. However, with the overlapping of the other variables it is really hard to tell.
