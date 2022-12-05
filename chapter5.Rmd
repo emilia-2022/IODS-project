@@ -199,13 +199,12 @@ For PC2, I interpreted it as a narrow gender equality indicator, which basically
 #### Reading in the Data 
 
 ```{r}
-tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", 
-                stringsAsFactors = TRUE)
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE)
 
 # taking a sub-set of the data 
-keep <- c("Tea", "breakfast", "lunch", "evening", "home", "work", "tearoom", "resto", "pub")
+keep_columns <- c("Tea", "breakfast", "lunch", "evening", "home", "work", "tearoom", "resto", "pub")
 
-tea_when_where <- select(tea, all_of(keep))
+tea_when_where <-  dplyr::select(tea, keep_columns)
 ```
 
 ### Exploring the Data 
