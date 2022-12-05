@@ -1,0 +1,263 @@
+# Week 5 - Dimensionality reduction techniques
+
+Another challenging week. I feel like with the speed that new data analysis tools are being introduced I have no time to understand what is going on each week in depth. I also struggled this week on the interpretations of the plots (particularly the biplots) as I still do not know how to interpret them. However, this was an interesting week and I was able to learn a lot with the help of "statquest" and "ritvikmath". 
+
+```{r}
+date()
+```
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 5: Dimensionality Reduction Techniques
+
+## Step 1:Set-up
+
+### Relevant Libraries and Packages
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyr)
+library(tibble)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(GGally)
+library(reshape2) # converting data to long format
+library(lattice)  # for box plots
+library(patchwork)
+library(FactoMineR)
+library(factoextra)
+```
+
+## Reading in the Data
+
+```{r, warning=FALSE}
+# read data from previously wrangled file (poor formatting because of wd issues)
+human <- readRDS("~/Uni Helsinki/Year One/Teaching Period 2/Open Data Science/IODS-project_2022/data/human.rds")
+```
+
+## Step 2: Graphical Overview and Summaries
+
+### Summaries
+
+```{r}
+summary(human)
+```
+
+*Interpretations* From the above variable summaries we can see that the variables in our data set are not of the same scale (clearly seen from the large variety in max values). Therefore, it is hard to visualize the distribution of variables on the same plot.
+
+### Box-plot
+
+```{r, warning = FALSE, message = FALSE}
+# convert data wide to long format 
+human_long <- melt(human)
+
+# create boxplot for all variables 
+bwplot(value ~ variable, human_long)
+```
+
+*Interpretations*
+
+Despite my previous interpretation, I decided to try anyways! But, as we clearly can see from the box plot above, the variables are not using the same scale. As they are not on the same scale, it is hard to visualize all of them in a single box plot and therefore they will be split up for ease of readability. To achieve this, a histogram with overlapping density plot will be utilized.
+
+### Histogram and Density Plot
+
+```{r, message = FALSE, warning = FALSE}
+p1 <- ggplot(human, aes(Edu2.FM)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p2 <- ggplot(human, aes(Labo.FM)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p3 <- ggplot(human, aes(Edu.Exp)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p4 <- ggplot(human, aes(GNI)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p5 <- ggplot(human, aes(Mat.Mor)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p6 <- ggplot(human, aes(Ado.Birth)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p7 <- ggplot(human, aes(Parli.F)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+p8 <- ggplot(human, aes(Life.Exp)) + 
+      geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+      geom_density(lwd = 1, colour = 4,
+                  fill = 4, alpha = 0.25)
+
+p1 + p2 + p3 + p4 + p5 + p6 + p7+ p8
+```
+
+*Interpretations*
+
+These histograms with overlaid density plots reveal that the variables have very different distributions. GNI, Mat.Mor, Parli.F, and Ado.Birth are all left-leaning whereas Life.Exp and Labo.FM are slightly right leaning. We can see that the two variables related to education, Edu2.FM and Edu.Exp exhibit less leaning with peaks occurring around the the middle of the density mass.
+
+### Correlation plot
+
+```{r}
+# compute the correlation matrix and visualize it with corrplot
+cor(human) %>% corrplot()
+```
+
+*Interpretations*
+
+Perhaps rather predictably, life expectancy is negatively correlated with maternity mortality ratio and adolescent birth rate. This means that when this ratio and rate are higher, the life expectancy is decreased in this country. Interestingly, both the maternity mortality ratio and adolescent birth rate are also negatively correlated with the expected years of schooling. Another interesting result is that GNI is negatively correlated with this rate and ratio as well. This result is perhaps indicative of the higher life expectancy present in "developed countries" (those with higher GNI). Moving away from maternity mortality ratio and adolescent birth rate, we can also see a strong positive correlation between expected years in school and life expectancy. Intuitively, this makes sense, the longer expected to be in school, the higher life expectancy.
+
+Both the percentage of female representatives in parliament (Parli.F) and the proportion of females over males in the labour force (Labo.FM) did not exhibit particularly high correlations.
+
+## Step 3: Principal component analysis(PCA)
+
+### PCA (non-standardized data)
+
+```{r warning = FALSE, fig.width=9}
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+s
+
+# rounded percentanges of variance captured by each PC
+pca_pr <- round(100*s$importance[2, ], digits = 5)
+pca_pr
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human, cex = c(0.8, 1), 
+       col = c("grey40", "deeppink2"), 
+       xlab = pc_lab[1],
+       ylab = pc_lab[2])
+```
+
+### PCA (standardized data)
+```{r warning = FALSE, fig.width=10, fig.height=6}
+# standardize the variables
+human_stan <- scale(human)
+
+# perform principal component analysis (with the SVD method)
+pca_human_stan <- prcomp(human_stan)
+
+# create and print out a summary of pca_human
+s_stan <- summary(pca_human_stan)
+s_stan
+
+# rounded percentages of variance captured by each PC
+pca_pr2 <- round(100*s$importance[2, ], digits = 5)
+pca_pr2
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr2), " (", pca_pr2, "%)")
+
+# draw a biplot
+biplot(pca_human_stan, cex = c(0.8, 1), 
+       col  = c("grey40", "deeppink2"), 
+       xlab = pc_lab[1],
+       ylab = pc_lab[2])
+```
+*Caption* 
+Plot visualizing the education and mortality rates (PC1) and representation of women in the work force (PC2) across 155 countries. 
+
+*Interpretations*
+We can see a stark contrast in the plots above. The first plot, where PCA was carried out on the raw data, is hard to read and does not perform proper PCA analysis as all the variables of varying scales. Another issue is that PC1 is explaining a whopping 99.9% of the data, which is an incredibly high explanation. Again, this can be because the lack of data standardization. We can also see that "GNI" is the variable with greatest variation, as it the longest arrow BY FAR - simply because it has the largest scale. 
+
+We can see that some of these problems are reminded when PCA was carried out on the standardized data set. Firstly, the variation in the variables is reflected more accurately in the arrow length - GNI is not the variable with the largest variation it now appears to be "Life.Exp" and "Labo.FM". We now also see a more even distribution of percentage of variance among the principal components with PC1 explaining 53.605% of the variance. 
+
+#### Interpretations of PC1 & PC2 
+
+Give your personal interpretations of the first two principal component dimensions based on the biplot drawn after PCA on the standardized human data. (0-2 points)
+
+This was a tough task. My interpretation of PC1 is not very certain, but in the end I decided that it was related to education and mortality rates. It appears that the countries with higher education rates and life expectancy rates are on the left side of the plot and countries with lower education rates and life expectancy are on the right side of the plot. This also can be tied to overall wealth, as we see GNI plays a role in PC1 as well. 
+
+For PC2, I interpreted it as a narrow gender equality indicator, which basically focused on the representation of women in the workforce. This idea came from the fact that Rwanda was the first country in the world to have the majority of women represented in parliament. They also have a very high female representation in their labour force. 
+
+## Tea-time
+
+### Step 1: Set-Up 
+
+#### Reading in the Data 
+
+```{r}
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", 
+                stringsAsFactors = TRUE)
+
+# taking a sub-set of the data 
+keep <- c("Tea", "breakfast", "lunch", "evening", "home", "work", "tearoom", "resto", "pub")
+
+tea_when_where <- select(tea, all_of(keep))
+```
+
+### Exploring the Data 
+
+```{r}
+str(tea_when_where)
+dim(tea_when_where)
+view(tea_when_where)
+```
+#### Visualize the Data 
+```{r}
+pivot_longer(tea_when_where, cols = everything()) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") +
+  geom_bar(col="lightgrey", fill = "lightblue", alpha = 0.8)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
+  theme_minimal()
+```
+
+### Multiple Correspondence Analysis(MCA)
+```{r}
+mca <- MCA(tea_when_where, graph = FALSE)
+
+# summary of the model
+summary(mca)
+```
+
+#### MCA Biplot 
+```{r}
+fviz_mca_biplot(mca, 
+               repel = TRUE, # Avoid text overlapping (slow if many point)
+               ggtheme = theme_minimal())
+```
+#### MCA Individual (coloured by group)
+
+```{r}
+fviz_mca_ind(mca, 
+             label = "none",    # hide individual labels
+             habillage = "Tea", # color by groups 
+             palette = c("Paired"),
+             addEllipses = TRUE, ellipse.type = "confidence",
+             ggtheme = theme_minimal())
+```
+
+#### MCA Factor Map 
+```{r, fig.height=7}
+# visualize MCA factor map 
+plot(mca, invisible=c("ind"), 
+     graph.type = "classic", 
+     habillage = "quali", 
+     palette = "Paired")
+```
+
+*Comments* 
+
+From the biplot, we can see the that the individuals are represented in blue and the variable categories are represented in red. From this plot, due to overlapping, it is incredibly hard to see the associations between the individuals and the variables. The second plot shows individuals grouped using their tea preference. From this, we can begin to see a split between green tea drinkers and those who drink Early Grey or Black tea. Finally, from the MCA factor map which factors begin to play a role in each dimension.The second dimension seems to be related to time, starting with breakfast and ending with "not breakfast", "evening", "lunch" and "not home". For the first dimension it is trickier to tell. It seems to be related more to the "where". Further to the right are variables related to drinking tea out and then on the left side there are variables more related to staying in. I am not sure if these are the correct interpretations but I tried my best! 
