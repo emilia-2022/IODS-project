@@ -129,7 +129,7 @@ Both the percentage of female representatives in parliament (Parli.F) and the pr
 
 ### PCA (non-standardized data)
 
-```{r warning = FALSE, fig.width=9}
+```{r warning = FALSE, fig.width=10, fig.height=6}
 # perform principal component analysis (with the SVD method)
 pca_human <- prcomp(human)
 
@@ -237,6 +237,7 @@ fviz_mca_biplot(mca,
                repel = TRUE, # Avoid text overlapping (slow if many point)
                ggtheme = theme_minimal())
 ```
+
 #### MCA Individual (coloured by group)
 
 ```{r}
