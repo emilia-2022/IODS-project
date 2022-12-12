@@ -785,5 +785,4 @@ ggplot(RATSL, aes(x = Time, y = fitted, group = ID)) +
   scale_y_continuous(name = "Fitted weight (grams)") +
   theme(legend.position = "top")
 ```
-
 **Very well done!!!**
