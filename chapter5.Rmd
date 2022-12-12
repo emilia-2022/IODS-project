@@ -192,9 +192,9 @@ This was a tough task. My interpretation of PC1 is not very certain, but in the 
 
 For PC2, I interpreted it as a narrow gender equality indicator, which basically focused on the representation of women in the workforce. This idea came from the fact that Rwanda was the first country in the world to have the majority of women represented in parliament. They also have a very high female representation in their labour force. 
 
-## Tea-time
+## Step 4: Tea-time
 
-### Step 1: Set-Up 
+### Set-Up 
 
 #### Reading in the Data 
 
