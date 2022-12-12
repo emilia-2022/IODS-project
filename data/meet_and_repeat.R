@@ -1,17 +1,20 @@
 # author: Emilia Carson 
 # date: December 12 2022 
 
-#
 
-"In the first part we will delve in to the BPRS data, in which 40 male subjects 
-were randomly assigned to one of two treatment groups and each subject was rated
-on the brief psychiatric rating scale (BPRS) measured before treatment began (week 0) 
-and then at weekly intervals for eight weeks. The BPRS assesses the level of 18 symptom 
-constructs such as hostility, suspiciousness, hallucinations and grandiosity; each of these 
-is rated from one (not present) to seven (extremely severe). The scale is used to evaluate 
-patients suspected of having schizophrenia." 
-# Available at:
+# Script to read in, clean add new variable of interest, and pivot data to long format 
 
+"The first data set is related to brief psychiatric rating scale (BPRS) and 40 
+male subjects who were randomly assigned to recieved one of two treatments for 
+eight weeks. The subjects were meausured on the BPRS prior to treatment and then 
+at weekly intervals thereafter. 
+
+The second data set is related to nutrition study conducted in rats. Three groups 
+were part of the study and each group was put on a different diet. Weight was 
+recorded (approximately) weekly over a nine week period." 
+
+"Available at: 1) https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt
+               2) https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt"
 # Data Wrangling 
 
 #Relevant packages and libraries 
